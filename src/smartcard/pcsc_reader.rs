@@ -51,12 +51,12 @@ pub struct PcscSmartCardChannel {
 }
 
 impl SmartCardChannel for PcscSmartCardChannel {
-    fn exchange_apdu<'buffer>(
+    fn exchange_apdu_raw<'buffer>(
         &mut self,
-        send_apdu: &[u8],
-        receive_apdu_buffer: &'buffer mut [u8; 264]
+        command_apdu: &[u8],
+        response_apdu_buffer: &'buffer mut [u8; 264]
     ) -> Result<&'buffer [u8], Error> {
-        self.pcsc_card.transmit(send_apdu, receive_apdu_buffer).map_err_to_smart_card_reader_error()
+        self.pcsc_card.transmit(command_apdu, response_apdu_buffer).map_err_to_smart_card_reader_error()
     }
 
     fn reset(self) -> Result<(), Error> {
