@@ -31,25 +31,33 @@ pub struct CommandApdu {
 }
 
 impl CommandApdu {
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut v = Vec::with_capacity(5 + self.data.len() + self.le.map(|_| 1).unwrap_or(0));
+    pub fn with_le(mut self, le: u8) -> Self {
+        self.le = Some(le);
+        self
+    }
 
-        v.push(self.cla);
-        v.push(self.ins);
-        v.push(self.p1);
-        v.push(self.p2);
+    pub fn with_no_le(mut self) -> Self {
+        self.le = None;
+        self
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(5 + self.data.len() + self.le.map(|_| 1).unwrap_or(0));
+
+        bytes.push(self.cla);
+        bytes.push(self.ins);
+        bytes.push(self.p1);
+        bytes.push(self.p2);
 
         if !self.data.is_empty() {
-            v.push(self.data.len() as u8); // Lc
-            v.extend_from_slice(&self.data);
-        } else {
-            v.push(0x00);
+            bytes.push(self.data.len() as u8); // Lc
+            bytes.extend_from_slice(&self.data);
         }
 
         if let Some(le) = self.le {
-            v.push(le);
+            bytes.push(le);
         }
 
-        v
+        bytes
     }
 }
