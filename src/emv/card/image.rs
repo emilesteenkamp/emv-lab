@@ -4,7 +4,6 @@ pub struct EmvCardImage {
 }
 
 pub struct DirectoryDefinitionFile {
-    /// Dedicate file name (DF Name).
     pub file_name: Vec<u8>,
     pub directory_entry_vec: Vec<DirectoryEntry>
 }
@@ -14,7 +13,6 @@ pub struct DirectoryEntry {
 }
 
 pub struct ApplicationDefinitionFile {
-    /// Dedicate file name (DF Name).
     pub application_identifier: Vec<u8>,
     pub application_file_record_vec: Vec<ApplicationFileRecord>
 }

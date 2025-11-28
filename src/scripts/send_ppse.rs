@@ -1,7 +1,7 @@
 use log::info;
 use crate::smartcard::apdu::command::{builders, CommandApdu};
 use crate::smartcard::apdu::response::ResponseApdu;
-use crate::smartcard::pcsc_reader::PcscSmartCardReaderReader;
+use crate::smartcard::pcsc_reader::PcscSmartCardReader;
 use crate::smartcard::reader::{Error, SmartCardChannel, SmartCardReader};
 
 
@@ -9,7 +9,7 @@ const EMV_RESPONSE_BUFFER_SIZE: usize = 264;
 const PPSE_FILE_NAME: &[u8; 14] = b"2PAY.SYS.DDF01";
 
 pub fn run() -> Result<(), Error> {
-    let smart_card_reader = PcscSmartCardReaderReader::new()?;
+    let smart_card_reader = PcscSmartCardReader::new()?;
     let mut smart_card_channel = smart_card_reader.connect()?;
     let mut response_apdu_buffer = [0u8; EMV_RESPONSE_BUFFER_SIZE];
 

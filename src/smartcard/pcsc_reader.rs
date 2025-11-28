@@ -2,11 +2,11 @@ use std::ffi::CStr;
 use log::error;
 use crate::smartcard::reader::{Error, SmartCardChannel, SmartCardReader};
 
-pub struct PcscSmartCardReaderReader {
+pub struct PcscSmartCardReader {
     pcsc_context: pcsc::Context
 }
 
-impl PcscSmartCardReaderReader {
+impl PcscSmartCardReader {
     pub fn new() -> Result<Self, Error> {
         let pcsc_context = pcsc::Context::establish(pcsc::Scope::User)
             .map_err_to_smart_card_reader_error()?;
@@ -28,7 +28,7 @@ impl PcscSmartCardReaderReader {
     }
 }
 
-impl SmartCardReader for PcscSmartCardReaderReader {
+impl SmartCardReader for PcscSmartCardReader {
     type SmartCardChannel = PcscSmartCardChannel;
 
     fn connect(&self) -> Result<Self::SmartCardChannel, Error> {
@@ -66,8 +66,6 @@ impl SmartCardChannel for PcscSmartCardChannel {
             .map_err_to_smart_card_reader_error()
     }
 }
-
-
 
 trait SmartCardReaderErrorMapper<SUCCESS>  {
     fn map_err_to_smart_card_reader_error(self) -> Result<SUCCESS, Error>;
