@@ -7,29 +7,19 @@ use crate::smartcard::reader::{Error, SmartCardChannel, SmartCardReader};
 mod smartcard;
 
 const EMV_RESPONSE_BUFFER_SIZE: usize = 264;
+const PPSE_FILE_NAME: [u8; 14] = [0x32, 0x50, 0x41, 0x59, 0x2E, 0x53, 0x59, 0x53, 0x2E, 0x44, 0x44, 0x46, 0x30, 0x31];
 
 fn main() -> Result<(), Error> {
     env_logger::init();
 
     let smart_card_reader = smartcard::pcsc_reader::PcscSmartCardReaderReader::new()?;
     let mut smart_card_channel = smart_card_reader.connect()?;
-
     let mut response_apdu_buffer = [0u8; EMV_RESPONSE_BUFFER_SIZE];
 
-    let command_apdu = CommandApdu {
-        cla: smartcard::apdu::command::cla::PCSC,
-        ins: 0xCA,
-        p1: 0x00,
-        p2: 0x00,
-        data: vec![],
-        le: None,
-    };
+    let command_apdu = smartcard::apdu::command::builders::select(Vec::from(PPSE_FILE_NAME));
     info!("Command APDU:  {}", command_apdu.to_apdu_string());
     let response_apdu = smart_card_channel
-        .exchange_apdu(
-            command_apdu,
-            &mut response_apdu_buffer
-        )?;
+        .exchange_apdu(command_apdu, &mut response_apdu_buffer)?;
     info!("Response APDU: {}", response_apdu.to_apdu_string());
 
     smart_card_channel.reset()?;

@@ -1,19 +1,23 @@
 pub mod cla {
     pub const INTER_INDUSTRY_STANDARD: u8 = 0x00;
-    pub const PCSC: u8 = 0xFF;
 }
 
 pub mod ins {
     pub const SELECT: u8 = 0xA4;
-    pub const READ_RECORD: u8 = 0xB2;
-    pub const GET_DATA: u8 = 0xCA;
 }
 
-mod builders {
-    use crate::smartcard::apdu::command::CommandApdu;
+pub mod builders {
+    use crate::smartcard::apdu::command::{cla, ins, CommandApdu};
 
-    fn select() -> CommandApdu {
-        todo!()
+    pub fn select(file_name: Vec<u8>) -> CommandApdu {
+        CommandApdu {
+            cla: cla::INTER_INDUSTRY_STANDARD,
+            ins: ins::SELECT,
+            p1: 0x04,
+            p2: 0x00,
+            data: file_name,
+            le: None,
+        }
     }
 }
 
@@ -39,7 +43,7 @@ impl CommandApdu {
             v.push(self.data.len() as u8); // Lc
             v.extend_from_slice(&self.data);
         } else {
-            v.push(0);
+            v.push(0x00);
         }
 
         if let Some(le) = self.le {
