@@ -1,14 +1,14 @@
 use log::info;
+use crate::pcsc::smartcard::reader::PcscSmartCardReader;
 use crate::smartcard::apdu::command::{builders, CommandApdu};
 use crate::smartcard::apdu::response::ResponseApdu;
-use crate::smartcard::pcsc_reader::PcscSmartCardReader;
-use crate::smartcard::reader::{Error, SmartCardChannel, SmartCardReader};
-
+use crate::smartcard::reader::{SmartCardChannel, SmartCardReader};
+use crate::tlv;
 
 const EMV_RESPONSE_BUFFER_SIZE: usize = 264;
 const PPSE_FILE_NAME: &[u8; 14] = b"2PAY.SYS.DDF01";
 
-pub fn run() -> Result<(), Error> {
+pub fn run() -> anyhow::Result<()> {
     let smart_card_reader = PcscSmartCardReader::new()?;
     let mut smart_card_channel = smart_card_reader.connect()?;
     let mut response_apdu_buffer = [0u8; EMV_RESPONSE_BUFFER_SIZE];
@@ -20,6 +20,9 @@ pub fn run() -> Result<(), Error> {
     info!("Response APDU: {}", response_apdu.to_apdu_string());
 
     smart_card_channel.reset()?;
+
+    let ber_tlv_vec = tlv::ber::decoder::decode(&response_apdu.data)?;
+    info!("ber_tlv_vec: {:?}", ber_tlv_vec);
 
     Ok(())
 }
@@ -33,7 +36,7 @@ impl ToApduString for [u8] {
         self.iter()
             .map(|b| format!("{:02X}", b))
             .collect::<Vec<_>>()
-            .join(" ")
+            .join("")
     }
 }
 
@@ -50,6 +53,6 @@ impl<'a> ToApduString for ResponseApdu<'a> {
             .chain([self.sw1, self.sw2].iter())
             .map(|b| format!("{:02X}", b))
             .collect::<Vec<_>>()
-            .join(" ")
+            .join("")
     }
 }

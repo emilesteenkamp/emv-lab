@@ -1,6 +1,7 @@
 use std::ffi::CStr;
 use log::error;
-use crate::smartcard::reader::{Error, SmartCardChannel, SmartCardReader};
+use crate::smartcard::reader::{SmartCardChannel, SmartCardReader};
+use crate::smartcard::reader::error::Error;
 
 pub struct PcscSmartCardReader {
     pcsc_context: pcsc::Context

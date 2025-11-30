@@ -1,2 +1,1 @@
-pub mod apdu;
 pub mod reader;

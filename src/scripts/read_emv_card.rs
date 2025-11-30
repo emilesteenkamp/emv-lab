@@ -1,7 +1,9 @@
 use crate::emv::card::reader::read_emv_card;
-use crate::smartcard::pcsc_reader::PcscSmartCardReader;
+use crate::pcsc::smartcard::reader::PcscSmartCardReader;
 
-pub fn run() {
-    let smart_card_reader = PcscSmartCardReader::new().unwrap();
-    read_emv_card(smart_card_reader).unwrap();
+pub fn run() -> anyhow::Result<()> {
+    let smart_card_reader = PcscSmartCardReader::new()?;
+    read_emv_card(smart_card_reader)?;
+    
+    Ok(())
 }
