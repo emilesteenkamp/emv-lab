@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use crate::hex::ToHexStringBorrowed;
 
 pub mod decoder;
 
@@ -28,10 +29,7 @@ impl Debug for BerValue {
                 write!(
                     f,
                     "{:?}",
-                    v.iter()
-                        .map(|b| format!("{:02X}", b))
-                        .collect::<Vec<_>>()
-                        .join("")
+                    v.to_hex_string()
                 )
             },
             BerValue::Constructed(v) => write!(f, "{:?}", v),

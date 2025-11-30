@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod emv;
+mod hex;
 mod pcsc;
 mod scripts;
 mod smartcard;

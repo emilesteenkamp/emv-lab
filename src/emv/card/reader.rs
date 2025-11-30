@@ -24,6 +24,10 @@ pub mod error {
 pub fn read_emv_card<R: SmartCardReader>(
     reader: R
 ) -> Result<EmvCardImage, error::Error> {
+    let mut image = EmvCardImage {
+        directory_definition_file_vec: vec![],
+        application_definition_file_vec: vec![],
+    };
     let channel = reader.connect()
         .map_err(|error| match error {
             smartcard::reader::error::Error::InternalError => error::Error::SmartCardReaderError,
@@ -31,5 +35,5 @@ pub fn read_emv_card<R: SmartCardReader>(
             smartcard::reader::error::Error::EmptyApduResponse => error::Error::InvalidApduResponse,
         })?;
 
-    todo!()
+    Ok(image)
 }

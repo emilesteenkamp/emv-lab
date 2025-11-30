@@ -1,12 +1,11 @@
 use log::info;
+use crate::emv::card::constants::{EMV_RESPONSE_BUFFER_SIZE, PPSE_FILE_NAME};
+use crate::hex::ToHexStringBorrowed;
 use crate::pcsc::smartcard::reader::PcscSmartCardReader;
 use crate::smartcard::apdu::command::{builders, CommandApdu};
 use crate::smartcard::apdu::response::ResponseApdu;
 use crate::smartcard::reader::{SmartCardChannel, SmartCardReader};
 use crate::tlv;
-
-const EMV_RESPONSE_BUFFER_SIZE: usize = 264;
-const PPSE_FILE_NAME: &[u8; 14] = b"2PAY.SYS.DDF01";
 
 pub fn run() -> anyhow::Result<()> {
     let smart_card_reader = PcscSmartCardReader::new()?;
@@ -31,28 +30,16 @@ trait ToApduString {
     fn to_apdu_string(&self) -> String;
 }
 
-impl ToApduString for [u8] {
-    fn to_apdu_string(&self) -> String {
-        self.iter()
-            .map(|b| format!("{:02X}", b))
-            .collect::<Vec<_>>()
-            .join("")
-    }
-}
-
 impl ToApduString for CommandApdu {
     fn to_apdu_string(&self) -> String {
-        self.to_bytes().to_apdu_string()
+        self.to_bytes().to_hex_string()
     }
 }
 
-impl<'a> ToApduString for ResponseApdu<'a> {
+impl ToApduString for ResponseApdu<'_> {
     fn to_apdu_string(&self) -> String {
-        self.data
-            .iter()
-            .chain([self.sw1, self.sw2].iter())
-            .map(|b| format!("{:02X}", b))
-            .collect::<Vec<_>>()
-            .join("")
+        let s1 = self.data.to_hex_string();
+        let s2 = [self.sw1, self.sw2].to_hex_string();
+        s1 + s2.as_str()
     }
 }
