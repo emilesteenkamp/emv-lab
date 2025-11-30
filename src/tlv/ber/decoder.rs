@@ -1,20 +1,23 @@
 use crate::tlv::ber::{BerTlv, BerValue};
 
-#[derive(Debug)]
-pub enum BerTlvError {
-    UnexpectedEof,
-    IndefiniteLengthUnsupported,
-}
-
-impl std::fmt::Display for BerTlvError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "BerTlvDecoderError({:?})", self)
+pub mod error {
+    #[derive(Debug)]
+    pub enum Error {
+        UnexpectedEof,
+        IndefiniteLengthUnsupported,
     }
+
+    impl std::fmt::Display for Error {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "BerTlvDecoderError({:?})", self)
+        }
+    }
+
+    impl std::error::Error for Error {}
 }
 
-impl std::error::Error for BerTlvError {}
 
-pub fn decode(input: &[u8]) -> Result<Vec<BerTlv>, BerTlvError> {
+pub fn decode(input: &[u8]) -> Result<Vec<BerTlv>, error::Error> {
     let mut ber_tlv_vec = Vec::new();
     let mut input = input;
 
@@ -28,13 +31,13 @@ pub fn decode(input: &[u8]) -> Result<Vec<BerTlv>, BerTlvError> {
 }
 
 /// AI generated slop.
-fn decode_one(input: &[u8]) -> Result<(BerTlv, usize), BerTlvError> {
+fn decode_one(input: &[u8]) -> Result<(BerTlv, usize), error::Error> {
     let mut offset = 0;
 
     // 1. Parse tag (1–N bytes)
     let first_tag_byte = *input
         .get(offset)
-        .ok_or(BerTlvError::UnexpectedEof)?;
+        .ok_or(error::Error::UnexpectedEof)?;
     offset += 1;
 
     let mut tag_bytes = vec![first_tag_byte];
@@ -44,7 +47,7 @@ fn decode_one(input: &[u8]) -> Result<(BerTlv, usize), BerTlvError> {
         loop {
             let b = *input
                 .get(offset)
-                .ok_or(BerTlvError::UnexpectedEof)?;
+                .ok_or(error::Error::UnexpectedEof)?;
             offset += 1;
             tag_bytes.push(b);
 
@@ -64,7 +67,7 @@ fn decode_one(input: &[u8]) -> Result<(BerTlv, usize), BerTlvError> {
     // 2. Parse length (short or long definite)
     let first_len_byte = *input
         .get(offset)
-        .ok_or(BerTlvError::UnexpectedEof)?;
+        .ok_or(error::Error::UnexpectedEof)?;
     offset += 1;
 
     let length: usize;
@@ -78,11 +81,11 @@ fn decode_one(input: &[u8]) -> Result<(BerTlv, usize), BerTlvError> {
 
         if num_len_bytes == 0 {
             // 0x80 => indefinite length, which we don't support for EMV
-            return Err(BerTlvError::IndefiniteLengthUnsupported);
+            return Err(error::Error::IndefiniteLengthUnsupported);
         }
 
         if offset + num_len_bytes > input.len() {
-            return Err(BerTlvError::UnexpectedEof);
+            return Err(error::Error::UnexpectedEof);
         }
 
         let mut len_val: usize = 0;
@@ -96,7 +99,7 @@ fn decode_one(input: &[u8]) -> Result<(BerTlv, usize), BerTlvError> {
     }
 
     if offset + length > input.len() {
-        return Err(BerTlvError::UnexpectedEof);
+        return Err(error::Error::UnexpectedEof);
     }
 
     let value_bytes = &input[offset .. offset + length];

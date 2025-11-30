@@ -30,11 +30,11 @@ pub trait SmartCardReader {
 pub trait SmartCardChannel {
     fn exchange_apdu<'buf>(
         &mut self,
-        send_apdu: CommandApdu,
-        receive_apdu_buffer: &'buf mut [u8; 264]
+        command_apdu: CommandApdu,
+        response_apdu_buffer: &'buf mut [u8; 264]
     ) -> Result<ResponseApdu<'buf>, error::Error> {
-        let command_apdu_bytes = send_apdu.to_bytes();
-        let response_apdu_bytes = self.exchange_apdu_raw(&command_apdu_bytes, receive_apdu_buffer)?;
+        let command_apdu_bytes = command_apdu.to_bytes();
+        let response_apdu_bytes = self.exchange_apdu_raw(&command_apdu_bytes, response_apdu_buffer)?;
         ResponseApdu::from_bytes(&response_apdu_bytes).map_err(|_| error::Error::EmptyApduResponse)
     }
 
