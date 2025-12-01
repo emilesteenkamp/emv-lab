@@ -8,6 +8,7 @@ use crate::smartcard::apdu::command::builders::select;
 use crate::smartcard::apdu::command::CommandApdu;
 use crate::smartcard::apdu::response::ResponseApdu;
 use crate::tlv::ber::decoder::decode;
+use crate::tlv::ber::lookup::BerTlvLookup;
 
 pub mod error {
     use std::fmt::{Display, Formatter};
@@ -63,7 +64,31 @@ fn read_directory_definition_file(
 ) -> Result<Option<DirectoryDefinitionFile>, error::Error> {
     let command_apdu = select(directory_definition_file_name).with_le(0x00);
     let response_apdu = apdu_exchanger.exchange(command_apdu)?;
+
+    if !response_apdu.is_ok() {
+        return Ok(None);
+    }
+
     let ber_tlv_vec = decode(response_apdu.data).map_err_to_emv_reader_error()?;
+
+    let Some(tag_6f) = ber_tlv_vec.find_tag(0x6F) else {
+        return Ok(None);
+    };
+    let Some(ber_tlv_vec) = tag_6f.optional_constructed_value() else {
+        return Ok(None);
+    };
+    let Some(tag_a5) = ber_tlv_vec.find_tag(0xA5) else {
+        return Ok(None);
+    };
+    let Some(ber_tlv_vec) = tag_a5.optional_constructed_value() else {
+        return Ok(None);
+    };
+    let Some(tag_bf0c) = ber_tlv_vec.find_tag(0xBF0C) else {
+        return Ok(None);
+    };
+    let Some(ber_tlv_vec) = tag_bf0c.optional_constructed_value() else {
+        return Ok(None);
+    };
 
     info!("ber_tlv_vec: {:?}", ber_tlv_vec);
 
