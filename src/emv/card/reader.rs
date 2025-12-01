@@ -1,14 +1,15 @@
 use log::{error, info};
 use crate::emv::card::constants::{EMV_RESPONSE_BUFFER_SIZE, PPSE_FILE_NAME};
-use crate::emv::card::image::{ApplicationDefinitionFile, DirectoryDefinitionFile, EmvCardImage, EmvTag};
+use crate::emv::card::image::{ApplicationDefinitionFile, DirectoryDefinitionFile, DirectoryEntry, EmvCardImage, EmvTag};
 use crate::hex::ToHexStringBorrowed;
 use crate::{smartcard, tlv};
 use crate::smartcard::reader::{SmartCardChannel, SmartCardReader};
 use crate::smartcard::apdu::command::builders::select;
 use crate::smartcard::apdu::command::CommandApdu;
 use crate::smartcard::apdu::response::ResponseApdu;
+use crate::tlv::ber::BerTagLengthValue;
 use crate::tlv::ber::decoder::decode;
-use crate::tlv::ber::lookup::BerTlvLookup;
+use crate::tlv::ber::lookup::{BerTlvLookup, BerTlvWalker};
 
 pub mod error {
     use std::fmt::{Display, Formatter};
@@ -47,6 +48,8 @@ pub fn read_emv_card<R: SmartCardReader>(
         image.directory_definition_file_vec.push(ppse_directory_definition_file);
     }
 
+    info!("Directory Definition Files: {:?}", image.directory_definition_file_vec);
+
     for directory_definition_file in image.directory_definition_file_vec.iter() {
         let mut application_definition_file = read_all_application_definition_file(
             &mut apdu_exchanger,
@@ -62,7 +65,7 @@ fn read_directory_definition_file(
     apdu_exchanger: &mut EmvApduExchanger<impl SmartCardChannel>,
     directory_definition_file_name: Vec<u8>
 ) -> Result<Option<DirectoryDefinitionFile>, error::Error> {
-    let command_apdu = select(directory_definition_file_name).with_le(0x00);
+    let command_apdu = select(directory_definition_file_name.clone()).with_le(0x00);
     let response_apdu = apdu_exchanger.exchange(command_apdu)?;
 
     if !response_apdu.is_ok() {
@@ -70,29 +73,47 @@ fn read_directory_definition_file(
     }
 
     let ber_tlv_vec = decode(response_apdu.data).map_err_to_emv_reader_error()?;
-
-    let Some(tag_6f) = ber_tlv_vec.find_tag(0x6F) else {
-        return Ok(None);
+    let tag_6f = match ber_tlv_vec.find_tag(0x6F) {
+        None => return Ok(None),
+        Some(ber_tlv) => ber_tlv
     };
-    let Some(ber_tlv_vec) = tag_6f.optional_constructed_value() else {
-        return Ok(None);
-    };
-    let Some(tag_a5) = ber_tlv_vec.find_tag(0xA5) else {
-        return Ok(None);
-    };
-    let Some(ber_tlv_vec) = tag_a5.optional_constructed_value() else {
-        return Ok(None);
-    };
-    let Some(tag_bf0c) = ber_tlv_vec.find_tag(0xBF0C) else {
-        return Ok(None);
-    };
-    let Some(ber_tlv_vec) = tag_bf0c.optional_constructed_value() else {
-        return Ok(None);
+    let tag_bf0c = match tag_6f.walk(&vec![0xA5, 0xBF0C]) {
+        None => return Ok(None),
+        Some(ber_tlv) => ber_tlv
     };
 
-    info!("ber_tlv_vec: {:?}", ber_tlv_vec);
+    match tag_bf0c.optional_constructed_value() {
+        None => Ok(None),
+        Some(ber_tlv_vec) => {
+            let directory_entry_vec = ber_tlv_vec.iter()
+                .filter_map(|ber_tlv| { construct_directory_entry(ber_tlv) })
+                .collect();
+            Ok(
+                Some(
+                    DirectoryDefinitionFile {
+                        file_name: directory_definition_file_name,
+                        directory_entry_vec
+                    }
+                )
+            )
+        }
+    }
+}
 
-    todo!()
+fn construct_directory_entry(
+    ber_tlv_vec: &BerTagLengthValue,
+) -> Option<DirectoryEntry> {
+    let tag_vec = ber_tlv_vec.optional_constructed_value()?.iter()
+        .filter_map(|ber_tlv| {
+            Some(
+                EmvTag {
+                    number: ber_tlv.tag,
+                    value: ber_tlv.optional_primitive_value()?.clone(),
+                }
+            )
+        })
+        .collect();
+    Some(DirectoryEntry { tag_vec })
 }
 
 fn read_all_application_definition_file(
