@@ -17,8 +17,12 @@ impl<'buf> ResponseApdu<'buf> {
         })
     }
 
-    pub fn status_word(&self) -> u16 {
-        ((self.sw1 as u16) << 8) | (self.sw2 as u16)
+    pub fn expect_ok(&self) -> Result<&'buf [u8], ()> {
+        if self.is_ok() {
+            Ok(self.data)
+        } else {
+            Err(())
+        }
     }
 
     pub fn is_ok(&self) -> bool {

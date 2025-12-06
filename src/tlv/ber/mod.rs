@@ -5,7 +5,7 @@ pub mod decoder;
 pub mod lookup;
 
 #[derive(Clone)]
-pub struct BerTagLengthValue {
+pub struct BerTlv {
     pub tag: u32,
     pub length: usize,
     pub value: PrimitiveOrConstructedValue,
@@ -14,10 +14,10 @@ pub struct BerTagLengthValue {
 #[derive(Clone)]
 pub enum PrimitiveOrConstructedValue {
     Primitive(Vec<u8>),
-    Constructed(Vec<BerTagLengthValue>)
+    Constructed(Vec<BerTlv>)
 }
 
-impl BerTagLengthValue {
+impl BerTlv {
     pub fn optional_primitive_value(&self) -> Option<&Vec<u8>> {
         match &self.value {
             PrimitiveOrConstructedValue::Primitive(v) => Some(v),
@@ -25,7 +25,7 @@ impl BerTagLengthValue {
         }
     }
 
-    pub fn optional_constructed_value(&self) -> Option<&Vec<BerTagLengthValue>> {
+    pub fn optional_constructed_value(&self) -> Option<&Vec<BerTlv>> {
         match &self.value {
             PrimitiveOrConstructedValue::Constructed(v) => Some(v),
             _ => None
@@ -33,7 +33,7 @@ impl BerTagLengthValue {
     }
 }
 
-impl Debug for BerTagLengthValue {
+impl Debug for BerTlv {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "BerTlv {{ tag: {:#X}, length: {}, value: {:?} }}", self.tag, self.length, self.value)
     }

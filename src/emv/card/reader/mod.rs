@@ -5,6 +5,7 @@ use crate::emv::card::reader::apdu_exchanger::EmvApduExchanger;
 use crate::emv::card::reader::application_definition_file_reader::read_application_definition_file;
 use crate::emv::card::reader::directory_definition_file_reader::read_directory_definition_file;
 use crate::emv::card::reader::tag_lookup::EmvTagLookup;
+use crate::emv::dictionary::TAG_4F;
 use crate::smartcard::reader::{SmartCardChannel, SmartCardReader};
 
 mod apdu_exchanger;
@@ -21,6 +22,7 @@ pub mod error {
         SmartCardReaderError,
         ReaderNotFound,
         InvalidApduResponse,
+        UnableToConstructApplicationDescriptor,
     }
 
     impl Display for Error {
@@ -68,7 +70,7 @@ fn read_all_application_definition_file(
     let mut application_definition_file_vec = vec![];
 
     for directory_entry in directory_definition_file.directory_entry_vec.iter() {
-        if let Some(application_identifier) = directory_entry.tag_vec.find_tag(0x4F) {
+        if let Some(application_identifier) = directory_entry.tag_vec.find_tag(TAG_4F) {
                 if let Some(application_definition_file) = read_application_definition_file(
                     apdu_exchanger,
                     application_identifier

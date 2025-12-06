@@ -1,4 +1,4 @@
-use crate::tlv::ber::{BerTagLengthValue, PrimitiveOrConstructedValue};
+use crate::tlv::ber::{BerTlv, PrimitiveOrConstructedValue};
 
 pub mod error {
     #[derive(Debug)]
@@ -17,7 +17,7 @@ pub mod error {
 }
 
 
-pub fn decode(input: &[u8]) -> Result<Vec<BerTagLengthValue>, error::Error> {
+pub fn decode(input: &[u8]) -> Result<Vec<BerTlv>, error::Error> {
     let mut ber_tlv_vec = Vec::new();
     let mut input = input;
 
@@ -31,7 +31,7 @@ pub fn decode(input: &[u8]) -> Result<Vec<BerTagLengthValue>, error::Error> {
 }
 
 /// AI generated slop.
-fn decode_one(input: &[u8]) -> Result<(BerTagLengthValue, usize), error::Error> {
+fn decode_one(input: &[u8]) -> Result<(BerTlv, usize), error::Error> {
     let mut offset = 0;
 
     // 1. Parse tag (1–N bytes)
@@ -126,7 +126,7 @@ fn decode_one(input: &[u8]) -> Result<(BerTagLengthValue, usize), error::Error> 
     };
 
     Ok((
-        BerTagLengthValue {
+        BerTlv {
             tag: tag,
             length,
             value,
